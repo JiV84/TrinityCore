@@ -521,9 +521,14 @@ class spell_warl_haunt : public SpellScriptLoader
 
             void HandleAfterHit()
             {
+                int32 amountHeal = GetHitDamage();
+                
                 if (Aura* aura = GetHitAura())
                     if (AuraEffect* aurEff = aura->GetEffect(EFFECT_1))
-                        aurEff->SetAmount(CalculatePct(aurEff->GetAmount(), GetHitDamage()));
+                        aurEff->SetAmount(amountHeal);
+                
+                else if (GetHitUnit() && !GetHitUnit()->IsAlive() && GetOriginalCaster()->IsAlive())//Killing Blow trigger, if the victim is dead the aura is already removed at this point.
+                    GetHitUnit()->CastCustomSpell(GetOriginalCaster(), SPELL_WARLOCK_HAUNT_HEAL, &amountHeal, NULL, NULL, false, NULL, NULL, GetOriginalCaster()->GetGUID());
             }
 
             void Register() override
@@ -546,15 +551,16 @@ class spell_warl_haunt : public SpellScriptLoader
             void HandleRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
             {
                 if (Unit* caster = GetCaster())
-                {
-                    int32 amount = aurEff->GetAmount();
-                    GetTarget()->CastCustomSpell(caster, SPELL_WARLOCK_HAUNT_HEAL, &amount, NULL, NULL, true, NULL, aurEff, GetCasterGUID());
-                }
+                    if(GetTarget()->IsAlive())//Aura effect trigger. Called before AfterHit event if the victim dies.
+                    {
+                        int32 amount = aurEff->GetAmount();
+                        GetTarget()->CastCustomSpell(caster, SPELL_WARLOCK_HAUNT_HEAL, &amount, NULL, NULL, true, NULL, aurEff, GetCasterGUID());
+                    }
             }
 
             void Register() override
             {
-                OnEffectRemove += AuraEffectApplyFn(spell_warl_haunt_AuraScript::HandleRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
+                AfterEffectRemove += AuraEffectRemoveFn(spell_warl_haunt_AuraScript::HandleRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
             }
         };
 
