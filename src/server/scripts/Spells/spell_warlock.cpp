@@ -551,7 +551,7 @@ class spell_warl_haunt : public SpellScriptLoader
             void HandleRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
             {
                 if (Unit* caster = GetCaster())
-                    if(GetTarget()->IsAlive())//Aura effect trigger. Called before AfterHit event if the victim dies.
+                    if (GetTarget()->IsAlive())//Aura effect trigger. Called before AfterHit event if the victim dies.
                     {
                         int32 amount = aurEff->GetAmount();
                         GetTarget()->CastCustomSpell(caster, SPELL_WARLOCK_HAUNT_HEAL, &amount, NULL, NULL, true, NULL, aurEff, GetCasterGUID());
